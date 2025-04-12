@@ -1,7 +1,35 @@
-# Ignore Terraform state and cache files
-.terraform/
-*.tfstate
-*.tfstate.backup
-crash.log
+# --- Terraform directories ---
+.terraform/                   # Local Terraform working dir
+.terraform.lock.hcl           # Optional: keep if you want consistent provider versions
+
+# --- Terraform state files ---
+terraform.tfstate
+terraform.tfstate.backup
+
+# --- Environment-specific overrides ---
+*.tfvars
+*.tfvars.json
+*.auto.tfvars
+*.auto.tfvars.json
+
+# --- Sensitive or personal files ---
+*.pem
+*.key
+*.crt
+*.env
+*.secret
+*.bak
+
+# --- IDE/editor files ---
+.vscode/
+.idea/
+*.code-workspace
+
+# --- OS-specific ---
+.DS_Store          # macOS
+Thumbs.db          # Windows
+
+# --- Logs and temp ---
 *.log
-.terraform.lock.hcl
+*.swp
+*.tmp
