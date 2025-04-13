@@ -9,29 +9,25 @@ on:
   #     - main
   workflow_dispatch: # allows manual runs from GitHub UI
 
-env:
-  ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-  ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-  ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-  ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-
 jobs:
   terraform:
     name: "Terraform Workflow"
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        shell: bash
-
     steps:
-      - name: Checkout repo
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup Terraform
+      - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.6.0
+
+      - name: Azure Login using OIDC
+        uses: azure/login@v1
+        with:
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}  # This is required for OIDC authentication
+          client-id: ${{ secrets.AZURE_APP_ID }}    # Reference the Azure App (Client) ID from GitHub Secrets
 
       - name: Terraform Init
         run: terraform init
