@@ -1,6 +1,5 @@
 terraform {
   required_version = "~> 1.5"
-
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
@@ -11,7 +10,6 @@ terraform {
       version = "~> 3.5"
     }
   }
-
   backend "azurerm" {
     resource_group_name  = "terraform-rg"
     storage_account_name = "tfstate82633"
@@ -24,25 +22,13 @@ provider "azurerm" {
   features {}
 }
 
-########################
-# Data Sources         #
-########################
-
 data "azurerm_client_config" "current" {}
-
-########################
-# Naming Module        #
-########################
 
 module "naming" {
   source  = "Azure/naming/azurerm"
   version = "~> 0.4"
-  prefix  = [var.project_prefix] # list(string) required
+  prefix  = [var.project_prefix]
 }
-
-########################
-# Core Resources       #
-########################
 
 resource "azurerm_resource_group" "rg" {
   name     = var.rg_name
@@ -57,9 +43,6 @@ resource "azurerm_log_analytics_workspace" "this" {
   retention_in_days   = 30
 }
 
-#----------------------
-# Key Vault with RBAC  
-#----------------------
 resource "azurerm_key_vault" "keyvault" {
   name                       = module.naming.key_vault.name_unique
   location                   = azurerm_resource_group.rg.location
@@ -68,7 +51,7 @@ resource "azurerm_key_vault" "keyvault" {
   sku_name                   = "standard"
   soft_delete_retention_days = 7
   purge_protection_enabled   = false
-  enable_rbac_authorization  = true # correct attribute name
+  enable_rbac_authorization  = true
 }
 
 resource "azurerm_role_assignment" "kv_secret_officer" {
@@ -83,10 +66,6 @@ resource "azurerm_key_vault_secret" "secret" {
   key_vault_id = azurerm_key_vault.keyvault.id
   depends_on   = [azurerm_role_assignment.kv_secret_officer]
 }
-
-########################
-# Azure Container Group#
-########################
 
 module "container_group" {
   source  = "Azure/avm-res-containerinstance-containergroup/azurerm"
@@ -103,6 +82,7 @@ module "container_group" {
   zones            = ["1"]
   priority         = "Regular"
   enable_telemetry = var.enable_telemetry
+
   containers = {
     app = {
       name   = "app1"
@@ -122,7 +102,7 @@ module "container_group" {
           secret = {
             "password" = base64encode("password123")
           }
-        },
+        }
         nginx = {
           mount_path = "/usr/share/nginx/html"
           name       = "nginx"
@@ -133,12 +113,14 @@ module "container_group" {
       }
     }
   }
+
   exposed_ports = [
     {
       port     = 80
       protocol = "TCP"
     }
   ]
+
   image_registry_credentials = [
     {
       server   = var.docker_registry_server
@@ -146,27 +128,22 @@ module "container_group" {
       password = var.docker_registry_password
     }
   ]
+
   diagnostics_log_analytics = {
     workspace_id  = azurerm_log_analytics_workspace.this.workspace_id
     workspace_key = azurerm_log_analytics_workspace.this.primary_shared_key
   }
 }
 
-############################################
-# Deployment tracker (visible in Azure UI) #
-############################################
-
 resource "azurerm_resource_group_template_deployment" "deployment_tracker" {
   name                = "${var.project_prefix}-deployment-${formatdate("YYYYMMDDhhmmss", timestamp())}"
   resource_group_name = azurerm_resource_group.rg.name
   deployment_mode     = "Incremental"
-
   template_content = jsonencode({
     "$schema"      = "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#"
     contentVersion = "1.0.0.0"
     resources      = []
   })
-
   depends_on = [
     azurerm_log_analytics_workspace.this,
     azurerm_key_vault.keyvault,
