@@ -19,6 +19,10 @@ jobs:
       ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       ARM_USE_OIDC: true
 
+      TF_VAR_docker_registry_server: index.docker.io
+      TF_VAR_docker_registry_username: ryannguyentech
+      TF_VAR_docker_registry_password: ${{ secrets.TF_VAR_docker_registry_password }}
+
     steps:
       - uses: actions/checkout@v3
 

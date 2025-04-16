@@ -39,6 +39,20 @@ variable "container_memory" {
   default     = 1
 }
 
+variable "docker_registry_server" {
+  default = "index.docker.io"
+  type    = string
+}
+
+variable "docker_registry_username" {
+  type = string
+}
+
+variable "docker_registry_password" {
+  type      = string
+  sensitive = true
+}
+
 ########################
 # Example secret value
 ########################
