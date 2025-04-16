@@ -64,7 +64,7 @@ locals {
 resource "azurerm_key_vault_secret" "secret" {
   key_vault_id    = azurerm_key_vault.keyvault.id
   name            = "secretname"
-  value           = "password123"               #demo only
+  value           = "password123" #demo only
   expiration_date = timeadd(timestamp(), local.secret_ttl)
 }
 

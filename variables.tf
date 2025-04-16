@@ -19,7 +19,7 @@ variable "project_prefix" {
 variable "secret_ttl_hours" {
   description = "Lifetime of the Key Vault secret in hours."
   type        = number
-  default     = 8760   # 1 year
+  default     = 8760 # 1 year
 }
 
 variable "container_image" {
