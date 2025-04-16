@@ -121,7 +121,7 @@ module "container_group" {
   }
 
   diagnostics_log_analytics = {
-    workspace_id  = azurerm_log_analytics_workspace.this.id
+    workspace_id  = azurerm_log_analytics_workspace.this.workspace_id
     workspace_key = azurerm_log_analytics_workspace.this.primary_shared_key
   }
 }
