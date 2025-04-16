@@ -1,46 +1,39 @@
 name: Terraform Deploy
 
 on:
+  workflow_dispatch:      # manual run
   # push:
-  #   branches:
-  #     - main
+  #   branches: [ main ]
   # pull_request:
-  #   branches:
-  #     - main
-  workflow_dispatch: # allows manual runs from GitHub UI
+  #   branches: [ main ]
 
 jobs:
   terraform:
-    name: "Terraform Workflow"
     runs-on: ubuntu-latest
+    env:
+      ARM_TENANT_ID:       ${{ secrets.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_CLIENT_ID:       ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_USE_OIDC:        true
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.6.0
 
-      - name: Azure Login using OIDC
+      - name: Azure login (OIDC)
         uses: azure/login@v1
         with:
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}  # This is required for OIDC authentication
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}    # Reference the Azure App (Client) ID from GitHub Secrets
-          subscription-id: 5946c608-f3ca-4c71-a2a0-82d7e743e91f
+          tenant-id:       ${{ secrets.AZURE_TENANT_ID }}
+          client-id:       ${{ secrets.AZURE_CLIENT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Terraform Init
-        run: terraform init
-
-      - name: Terraform Format Check
-        run: terraform fmt -check
-
-      - name: Terraform Validate
-        run: terraform validate
-
-      - name: Terraform Plan
-        run: terraform plan -var-file="terraform.tfvars" -out=tfplan
+      - run: terraform init
+      - run: terraform fmt -check
+      - run: terraform validate
+      - run: terraform plan -var-file="terraform.tfvars" -out=tfplan
 
       - name: Terraform Apply (manual only)
         if: github.event_name == 'workflow_dispatch'
