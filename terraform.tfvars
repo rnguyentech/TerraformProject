@@ -1,6 +1,6 @@
 docker_registry_username = "myDockerUser"
 docker_registry_password = "****"
-dummysecret        = "super‑secret‑value"
+dummysecret              = "super‑secret‑value"
 project_prefix           = "myproject"
 rg_name                  = "terraformproject-dev"
 location                 = "westus2"
