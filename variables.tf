@@ -1,41 +1,69 @@
-variable "location" {
-  description = "Azure region for all resources."
+########################
+# Core settings
+########################
+variable "project_prefix" {
+  description = "Short prefix used by the naming module (e.g. 'myproj')"
   type        = string
-  default     = "West US 2"
 }
 
 variable "rg_name" {
-  description = "Name of the resource group."
+  description = "Name of the resource group to create"
   type        = string
-  default     = "terraformproject-dev"
 }
 
-variable "project_prefix" {
-  description = "Prefix used by the naming module."
+variable "location" {
+  description = "Azure region for all resources"
   type        = string
-  default     = "tfproj"
+  default     = "westus2"
 }
 
-variable "secret_ttl_hours" {
-  description = "Lifetime of the Key Vault secret in hours."
-  type        = number
-  default     = 8760 # 1 year
-}
-
+########################
+# Container image
+########################
 variable "container_image" {
-  description = "Docker image for the container instance."
+  description = "Image name and tag, e.g. library/nginx:latest"
   type        = string
-  default     = "nginx:latest"
 }
 
 variable "container_cpu" {
-  description = "vCPU allocation for the container."
+  description = "vCPU cores for the container"
+  type        = number
+  default     = 0.5
+}
+
+variable "container_memory" {
+  description = "Memory (GB) for the container"
   type        = number
   default     = 1
 }
 
-variable "container_memory" {
-  description = "Memory (GB) allocation for the container."
-  type        = number
-  default     = 2
+########################
+# Optional – Docker Hub / ACR credentials
+########################
+variable "docker_registry_server" {
+  description = "Registry FQDN (index.docker.io for Docker Hub, <acr>.azurecr.io for ACR)"
+  type        = string
+  default     = "index.docker.io"
+}
+
+variable "docker_registry_username" {
+  description = "Registry username (blank if public image)"
+  type        = string
+  default     = ""
+}
+
+variable "docker_registry_password" {
+  description = "Registry password / PAT"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+########################
+# Example secret value
+########################
+variable "some_secret_value" {
+  description = "Sample secret to store in Key Vault"
+  type        = string
+  sensitive   = true
 }

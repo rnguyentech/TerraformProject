@@ -24,30 +24,27 @@ provider "azurerm" {
   features {}
 }
 
-# -----------------------------------------------------------------------------
-# Variables are declared in **variables.tf** to avoid duplicate declarations.
-# -----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Variables are declared in variables.tf to avoid duplicate declarations.
+# ---------------------------------------------------------------------------
 
 ########################
 # Data Sources         #
 ########################
-
 data "azurerm_client_config" "current" {}
 
 ########################
 # Naming Module        #
 ########################
-
 module "naming" {
   source  = "Azure/naming/azurerm"
   version = "~> 0.4"
-  prefix  = var.project_prefix
+  prefix  = [var.project_prefix] # list(string) required by module
 }
 
 ########################
 # Core Resources       #
 ########################
-
 resource "azurerm_resource_group" "rg" {
   name     = var.rg_name
   location = var.location
@@ -62,7 +59,7 @@ resource "azurerm_log_analytics_workspace" "this" {
 }
 
 #----------------------
-# Key Vault with RBAC  
+# Key Vault with RBAC
 #----------------------
 resource "azurerm_key_vault" "keyvault" {
   name                       = module.naming.key_vault.name_unique
@@ -75,12 +72,14 @@ resource "azurerm_key_vault" "keyvault" {
   rbac_authorization_enabled = true
 }
 
+# Grant deploying principal permission to manage secrets
 resource "azurerm_role_assignment" "kv_secret_officer" {
   scope                = azurerm_key_vault.keyvault.id
   role_definition_name = "Key Vault Secrets Officer"
   principal_id         = data.azurerm_client_config.current.object_id
 }
 
+# Example secret
 resource "azurerm_key_vault_secret" "secret" {
   name         = "secretname"
   value        = var.some_secret_value
@@ -89,9 +88,8 @@ resource "azurerm_key_vault_secret" "secret" {
 }
 
 ########################
-# Azure Container Group#
+# Azure Container Group #
 ########################
-
 module "container_group" {
   source  = "Azure/avm-res-containerinstance-containergroup/azurerm"
   version = "0.1.0"
@@ -102,7 +100,7 @@ module "container_group" {
   os_type             = "Linux"
   restart_policy      = "Always"
 
-  # single credential block (module expects singular argument)
+  # Registry credentials (optional)
   image_registry_credential = {
     server   = var.docker_registry_server
     username = var.docker_registry_username
@@ -120,7 +118,7 @@ module "container_group" {
     }]
   }]
 
-  # diagnostics configuration for Log Analytics workspace
+  # Log Analytics diagnostics
   diagnostics_log_analytics = {
     workspace_id  = azurerm_log_analytics_workspace.this.id
     workspace_key = azurerm_log_analytics_workspace.this.primary_shared_key
@@ -130,7 +128,6 @@ module "container_group" {
 ############################################
 # Deployment tracker (visible in Azure UI) #
 ############################################
-
 resource "azurerm_resource_group_template_deployment" "deployment_tracker" {
   name                = "${var.project_prefix}-deployment-${formatdate("YYYYMMDDhhmmss", timestamp())}"
   resource_group_name = azurerm_resource_group.rg.name
