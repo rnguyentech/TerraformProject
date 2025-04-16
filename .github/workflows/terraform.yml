@@ -28,7 +28,7 @@ jobs:
         with:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}  # This is required for OIDC authentication
           client-id: ${{ secrets.AZURE_CLIENT_ID }}    # Reference the Azure App (Client) ID from GitHub Secrets
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          subscription-id: 5946c608-f3ca-4c71-a2a0-82d7e743e91f
 
       - name: Terraform Init
         run: terraform init
