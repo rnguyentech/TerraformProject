@@ -98,15 +98,6 @@ module "container_group" {
   os_type             = "Linux"
   restart_policy      = "Always"
 
-  # registry credentials map keyed by server
-  image_registry_credential = {
-    (var.docker_registry_server) = {
-      username = var.docker_registry_username
-      password = var.docker_registry_password
-    }
-  }
-
-  # containers map keyed by name
   containers = {
     app = {
       image  = "${var.docker_registry_server}/${var.container_image}"
