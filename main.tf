@@ -120,11 +120,13 @@ module "container_group" {
     }
   }
 
-  image_registry_credential {
-    server   = var.docker_registry_server
-    username = var.docker_registry_username
-    password = var.docker_registry_password
-  }
+  image_registry_credentials = [
+    {
+      server   = var.docker_registry_server
+      username = var.docker_registry_username
+      password = var.docker_registry_password
+    }
+  ]
 
   diagnostics_log_analytics = {
     workspace_id  = azurerm_log_analytics_workspace.this.workspace_id
