@@ -1,11 +1,14 @@
 name: Terraform Deploy
 
 on:
-  workflow_dispatch:      # manual run
+  workflow_dispatch:
   # push:
   #   branches: [ main ]
-  # pull_request:
-  #   branches: [ main ]
+
+# ── OIDC requires these two permissions ──────────────────────────────
+permissions:
+  id-token: write      # allow this workflow to request JWTs
+  contents: read       # allow checkout of the repo
 
 jobs:
   terraform:
