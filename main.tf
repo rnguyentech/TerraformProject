@@ -125,7 +125,7 @@ module "container_group" {
     server                    = { value = var.docker_registry_server }
     username                  = { value = var.docker_registry_username }
     password                  = { value = var.docker_registry_password }
-    user_assigned_identity_id = { value = null }
+    user_assigned_identity_id = var.docker_registry_user_assigned_identity_id != "" ? var.docker_registry_user_assigned_identity_id : null
   }
 
   diagnostics_log_analytics = {

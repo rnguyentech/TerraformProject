@@ -53,6 +53,12 @@ variable "docker_registry_password" {
   sensitive = true
 }
 
+variable "docker_registry_user_assigned_identity_id" {
+  description = "User-assigned identity ID for image registry authentication (set to empty if not used)"
+  type        = string
+  default     = ""
+}
+
 ########################
 # Example secret value
 ########################
