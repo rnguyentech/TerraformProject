@@ -17,6 +17,12 @@ variable "location" {
   default     = "westus2"
 }
 
+variable "enable_telemetry" {
+  type        = bool
+  default     = true
+  description = "To enable telemetry"
+}
+
 ########################
 # Container image
 ########################
