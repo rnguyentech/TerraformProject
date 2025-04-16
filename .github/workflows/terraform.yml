@@ -39,7 +39,7 @@ jobs:
       - run: terraform init
       - run: terraform fmt -check
       - run: terraform validate
-      - run: terraform plan -var-file="terraform.tfvars" -out=tfplan
+      - run: terraform plan -out=tfplan
 
       - name: Terraform Apply (manual only)
         if: github.event_name == 'workflow_dispatch'
