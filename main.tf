@@ -67,6 +67,15 @@ resource "azurerm_key_vault_secret" "secret" {
   depends_on   = [azurerm_role_assignment.kv_secret_officer]
 }
 
+resource "azurerm_container_registry" "acr" {
+  name                = var.acr_name
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  sku                 = "Basic"
+  admin_enabled       = true
+  tags                = var.tags
+}
+
 module "container_group" {
   source  = "Azure/avm-res-containerinstance-containergroup/azurerm"
   version = "0.1.0"
@@ -86,7 +95,7 @@ module "container_group" {
   containers = {
     app = {
       name   = "app1"
-      image  = "nginx:latest"
+      image  = "mcr.microsoft.com/azuredocs/aci-helloworld"
       cpu    = var.container_cpu
       memory = var.container_memory
       ports = [
@@ -120,13 +129,6 @@ module "container_group" {
       protocol = "TCP"
     }
   ]
-
-  image_registry_credential = {
-    server                    = { value = var.docker_registry_server }
-    username                  = { value = var.docker_registry_username }
-    password                  = { value = var.docker_registry_password }
-    user_assigned_identity_id = var.docker_registry_user_assigned_identity_id != "" ? var.docker_registry_user_assigned_identity_id : null
-  }
 
   diagnostics_log_analytics = {
     workspace_id  = azurerm_log_analytics_workspace.this.workspace_id
