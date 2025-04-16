@@ -119,9 +119,10 @@ module "container_group" {
         }
       ]
       volumes = {
-        tmp = {               # <- volume key
-          mount_path = "/tmp" # path inside the container
-          empty_dir  = true   # simple EmptyDir volume (no Azure File share needed)
+        tmp = {
+          name       = "tmp"
+          mount_path = "/tmp"
+          empty_dir  = true
           read_only  = false
         }
       }
