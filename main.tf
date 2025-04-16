@@ -124,7 +124,7 @@ module "container_group" {
   image_registry_credential = {
     server   = var.docker_registry_server
     username = var.docker_registry_username
-    password = var.docker_registry_password
+    password = { value = var.docker_registry_password }
   }
 
   diagnostics_log_analytics = {
