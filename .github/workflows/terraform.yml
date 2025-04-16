@@ -7,17 +7,20 @@ on:
 
 # ── OIDC requires these two permissions ──────────────────────────────
 permissions:
-  id-token: write      # allow this workflow to request JWTs
-  contents: read       # allow checkout of the repo
+  id-token: write # allow this workflow to request JWTs
+  contents: read # allow checkout of the repo
 
 jobs:
   terraform:
     runs-on: ubuntu-latest
     env:
-      ARM_TENANT_ID:       ${{ secrets.AZURE_TENANT_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      ARM_CLIENT_ID:       ${{ secrets.AZURE_CLIENT_ID }}
-      ARM_USE_OIDC:        true
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_USE_OIDC: true
+      TF_VAR_docker_registry_server: index.docker.io
+      TF_VAR_docker_registry_username: ryannguyentech
+      TF_VAR_docker_registry_password: ${{ secrets.TF_VAR_docker_registry_password }}
 
     steps:
       - uses: actions/checkout@v3
@@ -29,8 +32,8 @@ jobs:
       - name: Azure login (OIDC)
         uses: azure/login@v1
         with:
-          tenant-id:       ${{ secrets.AZURE_TENANT_ID }}
-          client-id:       ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - run: terraform init
