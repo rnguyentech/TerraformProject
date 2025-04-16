@@ -97,10 +97,16 @@ module "container_group" {
   location            = azurerm_resource_group.rg.location
   os_type             = "Linux"
   restart_policy      = "Always"
-
+  tags = {
+    clustertype = "public"
+  }
+  zones            = ["1"]
+  priority         = "Regular"
+  enable_telemetry = var.enable_telemetry
   containers = {
     app = {
-      image  = "${var.docker_registry_server}/${var.container_image}"
+      name   = "app1"
+      image  = "nginx:latest"
       cpu    = var.container_cpu
       memory = var.container_memory
       ports = [
@@ -110,21 +116,27 @@ module "container_group" {
         }
       ]
       volumes = {
-        tmp = {
-          name       = "tmp"
-          mount_path = "/tmp"
-          empty_dir  = true
-          read_only  = false
+        secrets = {
+          mount_path = "/etc/secrets"
+          name       = "secret1"
+          secret = {
+            "password" = base64encode("password123")
+          }
+        },
+        nginx = {
+          mount_path = "/usr/share/nginx/html"
+          name       = "nginx"
+          secret = {
+            "indexpage" = base64encode("Hello, World!")
+          }
         }
       }
     }
   }
-
-  image_registry_credentials = [
+  exposed_ports = [
     {
-      server   = var.docker_registry_server
-      username = var.docker_registry_username
-      password = var.docker_registry_password
+      port     = 80
+      protocol = "TCP"
     }
   ]
 
