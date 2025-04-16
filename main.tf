@@ -122,9 +122,12 @@ module "container_group" {
   ]
 
   image_registry_credential = {
-    server   = { value = var.docker_registry_server }
-    username = { value = var.docker_registry_username }
-    password = { value = var.docker_registry_password }
+    default = {
+      server                    = var.docker_registry_server
+      username                  = var.docker_registry_username
+      password                  = var.docker_registry_password
+      user_assigned_identity_id = ""
+    }
   }
 
   diagnostics_log_analytics = {
