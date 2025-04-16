@@ -24,14 +24,47 @@ provider "azurerm" {
   features {}
 }
 
-# Azure Client Config Data Source
+########################
+# Variables            #
+########################
+
+variable "project_prefix" {}
+variable "rg_name" {}
+variable "location" {}
+variable "container_image" {}
+variable "container_cpu" { type = number }
+variable "container_memory" { type = number }
+
+# Optional – authenticate to Docker Hub or ACR to avoid pull‑rate limits
+variable "docker_registry_server" {
+  type    = string
+  default = "index.docker.io"
+}
+variable "docker_registry_username" { type = string }
+variable "docker_registry_password" { type = string }
+
+# Example secret value to be stored in Key Vault
+variable "dummysecret" { type = string }
+
+########################
+# Data Sources         #
+########################
+
 data "azurerm_client_config" "current" {}
+
+########################
+# Naming Module        #
+########################
 
 module "naming" {
   source  = "Azure/naming/azurerm"
   version = "~> 0.4"
-  prefix  = [var.project_prefix]
+  prefix  = var.project_prefix
 }
+
+########################
+# Core Resources       #
+########################
 
 resource "azurerm_resource_group" "rg" {
   name     = var.rg_name
@@ -39,68 +72,105 @@ resource "azurerm_resource_group" "rg" {
 }
 
 resource "azurerm_log_analytics_workspace" "this" {
-  location            = azurerm_resource_group.rg.location
   name                = module.naming.log_analytics_workspace.name_unique
+  location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   sku                 = "PerGB2018"
+  retention_in_days   = 30
 }
 
-resource "azurerm_user_assigned_identity" "this" {
-  location            = azurerm_resource_group.rg.location
-  name                = module.naming.user_assigned_identity.name_unique
-  resource_group_name = azurerm_resource_group.rg.name
-}
-
+#----------------------
+# Key Vault with RBAC  
+#----------------------
 resource "azurerm_key_vault" "keyvault" {
-  location                  = azurerm_resource_group.rg.location
-  name                      = module.naming.key_vault.name_unique
-  resource_group_name       = azurerm_resource_group.rg.name
-  sku_name                  = "standard"
-  tenant_id                 = data.azurerm_client_config.current.tenant_id
-  enable_rbac_authorization = true
+  name                       = module.naming.key_vault.name_unique
+  location                   = azurerm_resource_group.rg.location
+  resource_group_name        = azurerm_resource_group.rg.name
+  tenant_id                  = data.azurerm_client_config.current.tenant_id
+  sku_name                   = "standard"
+  soft_delete_retention_days = 7
+  purge_protection_enabled   = false
+  # **IMPORTANT**: Enable RBAC so role assignments control access
+  rbac_authorization_enabled = true
 }
 
-locals {
-  secret_ttl = "${var.secret_ttl_hours}h"
+# Grant the deploying service‑principal permission to manage secrets
+resource "azurerm_role_assignment" "kv_secret_officer" {
+  scope                = azurerm_key_vault.keyvault.id
+  role_definition_name = "Key Vault Secrets Officer"
+  principal_id         = data.azurerm_client_config.current.object_id
 }
 
+# Example secret – creation waits until RBAC is in place
 resource "azurerm_key_vault_secret" "secret" {
-  key_vault_id    = azurerm_key_vault.keyvault.id
-  name            = "secretname"
-  value           = "password123" #demo only
-  expiration_date = timeadd(timestamp(), local.secret_ttl)
+  name         = "secretname"
+  value        = var.dummysecret
+  key_vault_id = azurerm_key_vault.keyvault.id
+  depends_on   = [azurerm_role_assignment.kv_secret_officer]
 }
+
+########################
+# Azure Container Group#
+########################
 
 module "container_group" {
   source  = "Azure/avm-res-containerinstance-containergroup/azurerm"
   version = "0.1.0"
 
-  location            = azurerm_resource_group.rg.location
   name                = module.naming.container_group.name_unique
   resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  os_type             = "Linux"
+  ip_address_type     = "Public"
+  restart_policy      = "Always"
 
-  os_type        = "Linux"
-  restart_policy = "Always"
+  # Authenticate to registry to bypass Docker Hub rate‑limits or use private images
+  image_registry_credentials = [{
+    server   = var.docker_registry_server
+    username = var.docker_registry_username
+    password = var.docker_registry_password
+  }]
 
-  diagnostics_log_analytics = {
-    workspace_id  = azurerm_log_analytics_workspace.this.workspace_id
-    workspace_key = azurerm_log_analytics_workspace.this.primary_shared_key
-  }
+  containers = [{
+    name   = "app"
+    image  = "${var.docker_registry_server}/${var.container_image}"
+    cpu    = var.container_cpu
+    memory = var.container_memory
+    ports = [{
+      port     = 80
+      protocol = "TCP"
+    }]
+    environment_variables = []
+    commands              = []
+    volume_mounts         = []
+  }]
 
-  containers = {
-    app = {
-      image   = var.container_image
-      cpu     = var.container_cpu
-      memory  = var.container_memory
-      ports   = [{ port = 80, protocol = "TCP" }]
-      volumes = {}
+  diagnostics = {
+    log_analytics = {
+      workspace_id  = azurerm_log_analytics_workspace.this.id
+      workspace_key = azurerm_log_analytics_workspace.this.primary_shared_key
     }
   }
+}
 
-  exposed_ports = [{ port = 80, protocol = "TCP" }]
+############################################
+# Deployment tracker (visible in Azure UI) #
+############################################
 
-  managed_identities = {
-    system_assigned            = true
-    user_assigned_resource_ids = [azurerm_user_assigned_identity.this.id]
-  }
+resource "azurerm_resource_group_template_deployment" "deployment_tracker" {
+  name                = "${var.project_prefix}-deployment-${formatdate("YYYYMMDDhhmmss", timestamp())}"
+  resource_group_name = azurerm_resource_group.rg.name
+  deployment_mode     = "Incremental"
+
+  template_content = jsonencode({
+    "$schema"      = "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#"
+    contentVersion = "1.0.0.0"
+    resources      = []
+  })
+
+  depends_on = [
+    azurerm_log_analytics_workspace.this,
+    azurerm_key_vault.keyvault,
+    module.container_group
+  ]
 }
