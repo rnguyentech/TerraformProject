@@ -24,27 +24,9 @@ provider "azurerm" {
   features {}
 }
 
-########################
-# Variables            #
-########################
-
-variable "project_prefix" {}
-variable "rg_name" {}
-variable "location" {}
-variable "container_image" {}
-variable "container_cpu" { type = number }
-variable "container_memory" { type = number }
-
-# Optional – authenticate to Docker Hub or ACR to avoid pull‑rate limits
-variable "docker_registry_server" {
-  type    = string
-  default = "index.docker.io"
-}
-variable "docker_registry_username" { type = string }
-variable "docker_registry_password" { type = string }
-
-# Example secret value to be stored in Key Vault
-variable "dummysecret" { type = string }
+# -----------------------------------------------------------------------------
+# Variables are declared in **variables.tf** to avoid duplicate declarations.
+# -----------------------------------------------------------------------------
 
 ########################
 # Data Sources         #
@@ -83,28 +65,25 @@ resource "azurerm_log_analytics_workspace" "this" {
 # Key Vault with RBAC  
 #----------------------
 resource "azurerm_key_vault" "keyvault" {
-  name                       = module.naming.key_vault.name_unique
-  location                   = azurerm_resource_group.rg.location
-  resource_group_name        = azurerm_resource_group.rg.name
-  tenant_id                  = data.azurerm_client_config.current.tenant_id
-  sku_name                   = "standard"
-  soft_delete_retention_days = 7
-  purge_protection_enabled   = false
-  # **IMPORTANT**: Enable RBAC so role assignments control access
-  rbac_authorization_enabled = true
+  name                        = module.naming.key_vault.name_unique
+  location                    = azurerm_resource_group.rg.location
+  resource_group_name         = azurerm_resource_group.rg.name
+  tenant_id                   = data.azurerm_client_config.current.tenant_id
+  sku_name                    = "standard"
+  soft_delete_retention_days  = 7
+  purge_protection_enabled    = false
+  rbac_authorization_enabled  = true
 }
 
-# Grant the deploying service‑principal permission to manage secrets
 resource "azurerm_role_assignment" "kv_secret_officer" {
   scope                = azurerm_key_vault.keyvault.id
   role_definition_name = "Key Vault Secrets Officer"
   principal_id         = data.azurerm_client_config.current.object_id
 }
 
-# Example secret – creation waits until RBAC is in place
 resource "azurerm_key_vault_secret" "secret" {
   name         = "secretname"
-  value        = var.dummysecret
+  value        = var.some_secret_value
   key_vault_id = azurerm_key_vault.keyvault.id
   depends_on   = [azurerm_role_assignment.kv_secret_officer]
 }
@@ -124,7 +103,6 @@ module "container_group" {
   ip_address_type     = "Public"
   restart_policy      = "Always"
 
-  # Authenticate to registry to bypass Docker Hub rate‑limits or use private images
   image_registry_credentials = [{
     server   = var.docker_registry_server
     username = var.docker_registry_username
