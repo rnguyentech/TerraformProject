@@ -37,7 +37,7 @@ data "azurerm_client_config" "current" {}
 module "naming" {
   source  = "Azure/naming/azurerm"
   version = "~> 0.4"
-  prefix  = [var.project_prefix]  # list(string) required
+  prefix  = [var.project_prefix] # list(string) required
 }
 
 ########################
@@ -68,7 +68,7 @@ resource "azurerm_key_vault" "keyvault" {
   sku_name                   = "standard"
   soft_delete_retention_days = 7
   purge_protection_enabled   = false
-  enable_rbac_authorization  = true   # correct attribute name
+  enable_rbac_authorization  = true # correct attribute name
 }
 
 resource "azurerm_role_assignment" "kv_secret_officer" {
@@ -109,9 +109,9 @@ module "container_group" {
   # containers map keyed by name
   containers = {
     app = {
-      image   = "${var.docker_registry_server}/${var.container_image}"
-      cpu     = var.container_cpu
-      memory  = var.container_memory
+      image  = "${var.docker_registry_server}/${var.container_image}"
+      cpu    = var.container_cpu
+      memory = var.container_memory
       ports = [
         {
           port     = 80
