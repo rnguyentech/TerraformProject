@@ -67,15 +67,6 @@ resource "azurerm_key_vault_secret" "secret" {
   depends_on   = [azurerm_role_assignment.kv_secret_officer]
 }
 
-resource "azurerm_container_registry" "acr" {
-  name                = var.acr_name
-  resource_group_name = azurerm_resource_group.rg.name
-  location            = azurerm_resource_group.rg.location
-  sku                 = "Basic"
-  admin_enabled       = true
-  tags                = var.tags
-}
-
 module "container_group" {
   source  = "Azure/avm-res-containerinstance-containergroup/azurerm"
   version = "0.1.0"
