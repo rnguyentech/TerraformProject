@@ -118,7 +118,13 @@ module "container_group" {
           protocol = "TCP"
         }
       ]
-      volumes = []
+      volumes = {
+        tmp = {               # <- volume key
+          mount_path = "/tmp" # path inside the container
+          empty_dir  = true   # simple EmptyDir volume (no Azure File share needed)
+          read_only  = false
+        }
+      }
     }
   }
 
