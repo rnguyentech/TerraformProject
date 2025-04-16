@@ -65,14 +65,14 @@ resource "azurerm_log_analytics_workspace" "this" {
 # Key Vault with RBAC  
 #----------------------
 resource "azurerm_key_vault" "keyvault" {
-  name                       = module.naming.key_vault.name_unique
-  location                   = azurerm_resource_group.rg.location
-  resource_group_name        = azurerm_resource_group.rg.name
-  tenant_id                  = data.azurerm_client_config.current.tenant_id
-  sku_name                   = "standard"
-  soft_delete_retention_days = 7
-  purge_protection_enabled   = false
-  rbac_authorization_enabled = true
+  name                        = module.naming.key_vault.name_unique
+  location                    = azurerm_resource_group.rg.location
+  resource_group_name         = azurerm_resource_group.rg.name
+  tenant_id                   = data.azurerm_client_config.current.tenant_id
+  sku_name                    = "standard"
+  soft_delete_retention_days  = 7
+  purge_protection_enabled    = false
+  rbac_authorization_enabled  = true
 }
 
 resource "azurerm_role_assignment" "kv_secret_officer" {
@@ -100,14 +100,14 @@ module "container_group" {
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   os_type             = "Linux"
-  ip_address_type     = "Public"
   restart_policy      = "Always"
 
-  image_registry_credentials = [{
+  # single credential block (module expects singular argument)
+  image_registry_credential = {
     server   = var.docker_registry_server
     username = var.docker_registry_username
     password = var.docker_registry_password
-  }]
+  }
 
   containers = [{
     name   = "app"
@@ -118,16 +118,12 @@ module "container_group" {
       port     = 80
       protocol = "TCP"
     }]
-    environment_variables = []
-    commands              = []
-    volume_mounts         = []
   }]
 
-  diagnostics = {
-    log_analytics = {
-      workspace_id  = azurerm_log_analytics_workspace.this.id
-      workspace_key = azurerm_log_analytics_workspace.this.primary_shared_key
-    }
+  # log analytics diagnostic configuration (per module variable name)
+  log_analytics = {
+    workspace_id  = azurerm_log_analytics_workspace.this.id
+    workspace_key = azurerm_log_analytics_workspace.this.primary_shared_key
   }
 }
 
