@@ -27,7 +27,7 @@ provider "azurerm" {
 module "naming" {
   source  = "Azure/naming/azurerm"
   version = "~> 0.4"
-  prefix  = var.project_prefix
+  prefix  = [var.project_prefix]
 }
 
 resource "azurerm_resource_group" "rg" {
@@ -90,6 +90,7 @@ module "container_group" {
       cpu    = var.container_cpu
       memory = var.container_memory
       ports  = [{ port = 80, protocol = "TCP" }]
+      volumes = []
     }
   }
 

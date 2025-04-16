@@ -7,7 +7,7 @@ output "log_analytics_workspace_id" {
 }
 
 output "container_group_name" {
-  value = module.container_group.container_group_name
+  value = module.container_group.name
 }
 
 output "key_vault_url" {
