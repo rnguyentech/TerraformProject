@@ -118,6 +118,7 @@ module "container_group" {
           protocol = "TCP"
         }
       ]
+      volumes = []
     }
   }
 
